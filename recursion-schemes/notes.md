@@ -143,6 +143,8 @@ This is called [_codata_](https://tac-tics.net/blog/data-vs-codata).
 
 ## Generic traversals
 
+### Bottom-up
+
 Bottom-up traversal steps:
 
 1. Unpack the term to access its children
@@ -157,9 +159,9 @@ current node.
 bottomUp :: Functor a => (Term a -> Term a) -> Term a -> Term a
 bottomUp f =
   out -- unpack
-  >> fmap (bottomUp f) -- recurse
-  >> In -- repack
-  >> f -- transform
+  >>> fmap (bottomUp f) -- recurse
+  >>> In -- repack
+  >>> f -- transform
 ```
 
 `bottomUp` is a recursion scheme.
@@ -177,6 +179,27 @@ flatten :: Expr -> Expr
 flatten = bottomUp flattenTerm
 ```
 
+### Top-down
+
+Top-down is symmetrical to bottom-up.
+
+Steps:
+
+1. Apply f to the term
+2. Unpack the term to access the children
+3. Recursively traverse each child of the term with f
+4. Repack the term
+
+```haskell
+bottomUp :: Functor a => (Term a -> Term a) -> Term a -> Term a
+bottomUp f = out >>> fmap (bottomUp f) >>> In >>> f
+
+topDown :: Functor a => (Term a -> Term a) -> Term a -> Term a
+topDown f = In <<< fmap (topDown f) <<< out f
+```
+
 ### Questions
 
 - Why aren't `Foldable` and `Traversable` sufficient abstractions of recursion?
+
+## [Program Reduction: A Win for Recursion Schemes](http://www.newartisans.com/2018/04/win-for-recursion-schemes/)
