@@ -1,0 +1,1 @@
+#hasheq((doc . "Hello World!\n") (metas . #hasheq((here-path . "/home/maxhallinan/Projects/notebook-2019/pollen/hello.txt.pp"))))
