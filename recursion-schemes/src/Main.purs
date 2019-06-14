@@ -70,32 +70,32 @@ histo h = unwrap >>> _.out >>> map worker >>> h
                         , hole: map worker $ (_.out <<< unwrap) t
                         }
 
-histo' :: forall f a. Functor f => CVAlgebra f a -> Term f -> a
-histo' h = worker >>> unwrap >>> _.attribute
-  where worker = unwrap >>> _.out >>> map worker >>> (h &&& id) >>> mkAttr
-        mkAttr (a, b) = Attr { attribute: a, hole: b }
+{-- histo' :: forall f a. Functor f => CVAlgebra f a -> Term f -> a --}
+{-- histo' h = worker >>> unwrap >>> _.attribute --}
+{--   where worker = unwrap >>> _.out >>> map worker >>> (h &&& id) >>> mkAttr --}
+{--         mkAttr (a, b) = Attr { attribute: a, hole: b } --}
 
-type Cent = Int
+{-- type Cent = Int --}
 
-data Nat a 
-  = Zero
-  | Next a
+{-- data Nat a --} 
+{--   = Zero --}
+{--   | Next a --}
 
-derive instance functorNat :: Functor Nat
+{-- derive instance functorNat :: Functor Nat --}
 
-expand :: Int -> Term Nat
-expand 0 = Zero
-expand n = In (Next (expand $ n - 1))
+{-- expand :: Int -> Term Nat --}
+{-- expand 0 = Zero --}
+{-- expand n = In (Next (expand $ n - 1)) --}
 
-compress :: Nat (Attr Nat a) -> Int
-compress Zero = 0
-compress (Next x) = 1 + (compress x)
+{-- compress :: Nat (Attr Nat a) -> Int --}
+{-- compress Zero = 0 --}
+{-- compress (Next x) = 1 + (compress x) --}
 
-coins :: Array Cent
-coins = [50,25,10,5,1]
+{-- coins :: Array Cent --}
+{-- coins = [50,25,10,5,1] --}
 
-change :: Cent -> Int
-change amount = histo go (expand amount)
+{-- change :: Cent -> Int --}
+{-- change amount = histo go (expand amount) --}
 
 main :: Effect Unit
 main = do
