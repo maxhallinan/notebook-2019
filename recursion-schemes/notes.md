@@ -667,12 +667,12 @@ In $ Add $
   (In $ Add $ (In $ map (either identity (apo buildNum)) $ (Add (Left $ In (Num 1)) (Left $ In (Num 0)))) (In $ map (either identity (apo buildNum)) $ (Add (Left $ In (Num 1)) (Left $ In (Num 0)))
   (In $ Add $ (In (Num 1)) (Num 0))
 In $ Add $
-  (In $ Add $ 
+  (In $ Add $
     (In $ Add (either identity (apo buildNum) (Left (In (Num 1)))) (either identity (apo buildNum) (Left (In (Num 0))))
     (In $ Add (either identity (apo buildNum) (Left (In (Num 1)))) (either identity (apo buildNum) (Left (In (Num 0))))
   (In $ Add $ (In (Num 1)) (Num 0))
 In $ Add $
-  (In $ Add $ 
+  (In $ Add $
     (In $ Add (In (Num 1)) (In (Num 0)))
     (In $ Add (In (Num 1)) (In (Num 0)))
   (In $ Add $ (In (Num 1)) (Num 0))
@@ -682,6 +682,114 @@ So this builds up a structure of `Fix AddF` equivalent to the int 3.
 
 ```purescript
 (cata add <<< apo buildNum) 3 == 3
+```
+
+#### Histomorphism
+
+A histomorphims first descends to the leaves of the tree.
+Then it works back up toward the root of the tree.
+As it does this, it builds up a second tree.
+This second tree mirrors the structure of the first tree.
+Each node on this tree has two things: the result of applying the function `f`
+to that node and the original node.
+Each time the function `f` is called, it can look through the history of the 
+traversal through the subtree below the current node.
+So you get a history of the entire traversal, seeing what the intermediate values
+were at each node of the tree.
+
+This is called **course-of-value recursion**. 
+Course-of-value recrusion records intermediate values of the fold and preserves 
+the original structure.
+
+The structure is represented by the `Attr` type:
+The `attribute` field is the current value of the fold.
+The `hole` field is the original subtree.
+
+```purescript
+newtype Attr f a = Attr { attribute :: a, hole :: f (Attr f a) }
+```
+
+The folding function is a course-of-value algebra, or a `CVAlgebra`.
+A `CVAlgebra` is a function of this `Attr` type:
+
+```purescript
+type CVAlgebra f a = f (Attr f a) -> a
+```
+
+Here is a very simple of the history of the evaluation of the the expression 
+`In (Add (In (Num 1)) (In (Num 1)))`.
+
+```purescript
+Attr 
+  { attribute: 2
+  , hole: Add (Attr 
+                { attribute: 1
+                , hole: Num 1 
+                }) 
+              (Attr 
+                { attribute: 1
+                , hole: Num 1
+                }) 
+  }
+```
+
+Here is another example for history of the evaluation of the expression 
+`In (Add (In (Add (In (Num 1)) (In (Num 1)))) (In (Add (In (Num 1)) (In (Num 1)))))`.
+
+```purescript
+Attr 
+  { attribute: 4
+  , hole: Add (Attr { attribute 2
+                    , hole: Add (Attr { attribute: 1
+                                      , hole: Num 1
+                                      }) 
+                                (Attr { attribute: 1
+                                      , hole: Num 1
+                                      })}) 
+              (Attr { attribute 2
+                    , hole: Add (Attr { attribute: 1
+                                      , hole: Num 1
+                                      }) 
+                                (Attr {})
+                    })
+  }
+```
+
+##### A note on implementations of histo
+
+This implemenation involves several folds/traversals of the structure.
+At each node, it's calling `histo` recursively and it's calling `worker` 
+recursively.
+So they split into two process and the work isn't shared.
+
+```purescript
+histo :: forall f a. Functor f => CVAlgebra f a -> Fix f -> a
+histo f = unwrap >>> map worker >>> f
+  where 
+    worker term = Attr { attribute: histo f term
+                       , hole: map worker (unwrap term)
+                       }
+```
+
+This is a more performant implementation.
+In this implementation, `worker` descends completely to the leaves of the tree
+before doing anything.
+That's what `unwrap >>> map (\x -> worker x)` does. 
+This will go to the leaf nodes before it applies `mkAttr`.
+Once the recursion terminates, then `mkAttr` is called on the node.
+And `mkAttr` defines both the `attribute` and `hole` fields using that node.
+So there is only one fold whereas in the first example, there are several folds 
+going on.
+
+```purescript
+histo' :: forall f a. Functor f => CVAlgebra f a -> Fix f -> a
+histo' f = worker >>> getAttribute
+  where 
+    worker = unwrap >>> map (\x -> worker x) >>> mkAttr
+    mkAttr term = Attr { attribute: f term
+                       , hole: term
+                       }
+    getAttribute = unwrap >>> _.attribute
 ```
 
 ### Questions
