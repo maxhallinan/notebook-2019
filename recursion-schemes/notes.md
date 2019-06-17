@@ -692,13 +692,13 @@ As it does this, it builds up a second tree.
 This second tree mirrors the structure of the first tree.
 Each node on this tree has two things: the result of applying the function `f`
 to that node and the original node.
-Each time the function `f` is called, it can look through the history of the 
+Each time the function `f` is called, it can look through the history of the
 traversal through the subtree below the current node.
 So you get a history of the entire traversal, seeing what the intermediate values
 were at each node of the tree.
 
-This is called **course-of-value recursion**. 
-Course-of-value recrusion records intermediate values of the fold and preserves 
+This is called **course-of-value recursion**.
+Course-of-value recrusion records intermediate values of the fold and preserves
 the original structure.
 
 The structure is represented by the `Attr` type:
@@ -716,40 +716,40 @@ A `CVAlgebra` is a function of this `Attr` type:
 type CVAlgebra f a = f (Attr f a) -> a
 ```
 
-Here is a very simple of the history of the evaluation of the the expression 
+Here is a very simple of the history of the evaluation of the the expression
 `In (Add (In (Num 1)) (In (Num 1)))`.
 
 ```purescript
-Attr 
+Attr
   { attribute: 2
-  , hole: Add (Attr 
-                { attribute: 1
-                , hole: Num 1 
-                }) 
-              (Attr 
+  , hole: Add (Attr
                 { attribute: 1
                 , hole: Num 1
-                }) 
+                })
+              (Attr
+                { attribute: 1
+                , hole: Num 1
+                })
   }
 ```
 
-Here is another example for history of the evaluation of the expression 
+Here is another example for history of the evaluation of the expression
 `In (Add (In (Add (In (Num 1)) (In (Num 1)))) (In (Add (In (Num 1)) (In (Num 1)))))`.
 
 ```purescript
-Attr 
+Attr
   { attribute: 4
   , hole: Add (Attr { attribute 2
                     , hole: Add (Attr { attribute: 1
                                       , hole: Num 1
-                                      }) 
+                                      })
                                 (Attr { attribute: 1
                                       , hole: Num 1
-                                      })}) 
+                                      })})
               (Attr { attribute 2
                     , hole: Add (Attr { attribute: 1
                                       , hole: Num 1
-                                      }) 
+                                      })
                                 (Attr {})
                     })
   }
@@ -758,14 +758,14 @@ Attr
 ##### A note on implementations of histo
 
 This implemenation involves several folds/traversals of the structure.
-At each node, it's calling `histo` recursively and it's calling `worker` 
+At each node, it's calling `histo` recursively and it's calling `worker`
 recursively.
 So they split into two process and the work isn't shared.
 
 ```purescript
 histo :: forall f a. Functor f => CVAlgebra f a -> Fix f -> a
 histo f = unwrap >>> map worker >>> f
-  where 
+  where
     worker term = Attr { attribute: histo f term
                        , hole: map worker (unwrap term)
                        }
@@ -774,23 +774,150 @@ histo f = unwrap >>> map worker >>> f
 This is a more performant implementation.
 In this implementation, `worker` descends completely to the leaves of the tree
 before doing anything.
-That's what `unwrap >>> map (\x -> worker x)` does. 
+That's what `unwrap >>> map (\x -> worker x)` does.
 This will go to the leaf nodes before it applies `mkAttr`.
 Once the recursion terminates, then `mkAttr` is called on the node.
 And `mkAttr` defines both the `attribute` and `hole` fields using that node.
-So there is only one fold whereas in the first example, there are several folds 
+So there is only one fold whereas in the first example, there are several folds
 going on.
 
 ```purescript
 histo' :: forall f a. Functor f => CVAlgebra f a -> Fix f -> a
 histo' f = worker >>> getAttribute
-  where 
+  where
     worker = unwrap >>> map (\x -> worker x) >>> mkAttr
     mkAttr term = Attr { attribute: f term
                        , hole: term
                        }
     getAttribute = unwrap >>> _.attribute
 ```
+
+##### Futumorphism
+
+A futumorphism is dual to a histomorphism.
+A futomorphism is also a kind of unfold, just like an anamorphism and an
+apomorphism.
+
+This requires using the dual of `Attr`.
+The dual of `Attr f a` is `CoAttr f a`.
+`Attr` is a product type.
+`CoAttr` is a union type.
+
+```purescript
+newtype Attr f a = Attr { attribute :: a, hole :: f (Attr f a) }
+
+data CoAttr f a
+  = Automatic a
+  | Manual (f (CoAttr f a))
+```
+
+Then you also need the dual of `CVAlgebra f a`.
+
+```purescript
+type CVAlgebra f a = f (Attr f a) -> a
+
+type CVCoalgebra f a = a -> f (CoAttr f a)
+```
+
+The `CoAttr` constructors are used to control the unfold.
+`Automatic` means to continue the unfold process "automatically".
+I don't know what it means to "continue automatically"
+`Manual` takes manual control of the unfold.
+I also don't really know what that means.
+
+```purescript
+futu :: forall f a. Functor f => CVCoalgebra f a -> a -> Fix f
+futu f = In <<< map worker <<< f
+  where
+    worker (Automatic a) = futu f a
+    worker (Manual g) = In $ map worker g
+```
+
+```purescript
+futu sow (Seed { height: 0})
+In $ map worker $ f (Seed { height: 0 })
+In $ map worker (Root (Automatic (Seed { height: 2 })))
+In $ Root $ worker (Automatic (Seed { height: 2}))
+In $ Root $ futu sow (Seed { height: 2 })
+In $ Root $ In $ map worker $ sow (Seed { height: 2 })
+In $ Root $ In $ map worker $ Fork (Manual (Stalk (Automatic (Seed { height: 3}))))
+                                   (Manual Bloom)
+                                   (Manual (Stalk (Automatic (Seed { height: 3}))))
+In $ Root $ In $ Fork (worker (Manual (Stalk (Automatic (Seed { height: 3})))))
+                      (worker (Manual Bloom))
+                      (worker (Manual (Stalk (Automatic (Seed { height: 3})))))
+In $ Root $ In $ Fork (In $ map worker (Stalk (Automatic (Seed { height: 3}))))
+                      (In $ map worker Bloom)
+                      (In $ map worker (Stalk (Automatic (Seed { height: 3}))))
+In $ Root $ In $ Fork (In $ Stalk $ worker (Automatic (Seed { height: 3})))
+                      (In $ map worker Bloom)
+                      (In $ Stalk $ worker (Automatic (Seed { height: 3})))
+In $ Root $ In $ Fork (In $ Stalk $ futo sow (Seed { height: 3}))
+                      (In $ Bloom)
+                      (In $ Stalk $ futo sow (Seed { height: 3}))
+```
+
+So I think if you use `Automatic`, then that means `futu` is called again.
+And if you call `futu` again, then `f` is called again.
+But if you use `Manual`, then only `worker` is called again.
+`f` is not called again until you hit another `Automatic`.
+So `Manual (Root (Manual Stalk (Manual Bloom)))` just becomes `In (Root (In (Stalk (In Bloom)))`.
+You can manually specify not just one new node in the unfolding structure, you
+can specify a whole subtree.
+You can't do that with `Automatic`.
+The type prevents you from doing that.
+`Automatic` is used to add a single new node to the unfolding structure.
+`Manual` is used to insert a substructure into the unfolding structure.
+
+###### futuM
+
+The example given for `futu` is a cellular automata.
+This cellular automata required a random number generator.
+Random number generation in PureScript requires an `Effect`.
+In Haskell, there's a way to inject a generator, so you don't need to build 
+`IO` into the function.
+
+My first attempt was to take the type `CVCoalgebra Plant Seed` and make it into
+a `CVCoalgebra Effect Seed`.
+The first type is saying that the function takes a `Seed` as an argument and 
+returns an `Plant (CoAttr Plant Seed)`.
+So instead of `Seed -> Plant (CoAttr Plant Seed)`, I would be returning a 
+`Seed -> Effect (CoAttr Effect Seed)`.
+Which means that my `CoAttr` is either `Automatic (Seed { height: 1 })` or
+`Manual (Effect (Manual (Effect (Manual (Effect (...))))))` or 
+`Manual (Effect (Manual (Effect (Automatic (Seed { height: 1 })))))`.
+You can never get to the base case of `Bloom`.
+And my `sow` and `grow` functions didn't work because of the recursion. 
+They kept trying to interleave `CoAttr` and `Plant`, not lifting into `Effect`
+each time.
+So it didn't compile.
+
+What I realized I needed is another `futu` implementation that is for monads.
+This allows you to get back a `m (Fix f)` instead of a `Fix f`.
+This requires a change to the coalgebra type and to the futu implementation.
+
+```purescript
+type CVCoalgebraM m f a = a -> m (f (CoAttr f a))
+
+futuM :: forall m f a. Monad m => Traversable f => Functor f => CVCoalgebraM m f a -> a -> m (Fix f)
+futuM f = go
+  where 
+    go a = map In <<< traverse worker =<< f a
+    worker (Automatic a) = futuM f a
+    worker (Manual g) = map In $ traverse worker g
+```
+
+How does this work?
+
+1. Call `f` on `a` which returns `m (f (CoAttr f a))`
+1. Now you want to apply `worker` to the inner `CoAttr`.
+1. You have two layers you must lift over: `m` and `f`.
+1. Use `=<<` to lift `traverse worker` over the layer `m`.
+1. Use `traverse` to lift `worker` over `f`
+1. `worker` is `CoAttr f a -> m (Fix f)`
+1. `traverse worker` is `f (CoAttr f a) -> m (f (Fix f))`
+1. Finally, you need to go from `m (f (Fix f))` to `m (Fix f)`.
+1. So use `map` to lift `In` over `m`, transforming `m (f (Fix f))` into `m (Fix f)`.
 
 ### Questions
 
@@ -818,3 +945,5 @@ How I learned Haskell.
 2. Write out the evaluation of a confusing expression.
 
 Revisit anamorphism
+
+1. Why is it call `Attr` and not something like `History`?
