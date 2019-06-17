@@ -26,3 +26,9 @@ Total hours: 10:00
 ### 2019-06-16
 
 - Wrote "let expressions, I/O is also boring" blog post
+
+## 2019-06-17 - 2019-06-23
+
+| Date | Tomatoes | Time |
+|------|----------|------|
+| 2019-06-17 | 6 | 2:30 | 
