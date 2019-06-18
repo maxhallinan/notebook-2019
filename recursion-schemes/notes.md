@@ -874,20 +874,20 @@ The type prevents you from doing that.
 The example given for `futu` is a cellular automata.
 This cellular automata required a random number generator.
 Random number generation in PureScript requires an `Effect`.
-In Haskell, there's a way to inject a generator, so you don't need to build 
+In Haskell, there's a way to inject a generator, so you don't need to build
 `IO` into the function.
 
 My first attempt was to take the type `CVCoalgebra Plant Seed` and make it into
 a `CVCoalgebra Effect Seed`.
-The first type is saying that the function takes a `Seed` as an argument and 
+The first type is saying that the function takes a `Seed` as an argument and
 returns an `Plant (CoAttr Plant Seed)`.
-So instead of `Seed -> Plant (CoAttr Plant Seed)`, I would be returning a 
+So instead of `Seed -> Plant (CoAttr Plant Seed)`, I would be returning a
 `Seed -> Effect (CoAttr Effect Seed)`.
 Which means that my `CoAttr` is either `Automatic (Seed { height: 1 })` or
-`Manual (Effect (Manual (Effect (Manual (Effect (...))))))` or 
+`Manual (Effect (Manual (Effect (Manual (Effect (...))))))` or
 `Manual (Effect (Manual (Effect (Automatic (Seed { height: 1 })))))`.
 You can never get to the base case of `Bloom`.
-And my `sow` and `grow` functions didn't work because of the recursion. 
+And my `sow` and `grow` functions didn't work because of the recursion.
 They kept trying to interleave `CoAttr` and `Plant`, not lifting into `Effect`
 each time.
 So it didn't compile.
@@ -901,7 +901,7 @@ type CVCoalgebraM m f a = a -> m (f (CoAttr f a))
 
 futuM :: forall m f a. Monad m => Traversable f => Functor f => CVCoalgebraM m f a -> a -> m (Fix f)
 futuM f = go
-  where 
+  where
     go a = map In <<< traverse worker =<< f a
     worker (Automatic a) = futuM f a
     worker (Manual g) = map In $ traverse worker g
@@ -947,3 +947,402 @@ How I learned Haskell.
 Revisit anamorphism
 
 1. Why is it call `Attr` and not something like `History`?
+
+## [Base Functors](https://blog.sumtypeofway.com/recursion-schemes-part-41-2-better-living-through-base-functors/)
+
+It's a bit tedious to have to deal with `Fix` explicitly.
+It would be nicer to just deal with the plain underlying data type.
+The `Base` type family and the `Recursive` and `Corecursive` type classes enable
+this.
+
+Use Haskell's `[a]` as an example.
+`[a]` is defined as:
+
+```haskell
+infixr 5 :
+data [] a = a : [a] | []
+```
+
+You can't use this with `Fix` because it prevents elements from being stored in
+the list.
+The cons cells are filled with `In`:
+
+```haskell
+foo :: Fix [a]
+foo = In : In : In : In : []
+```
+
+To use with `Fix`, you have to define the list type in a slightly different way:
+
+```haskell
+data ListF a b = Nil | Cons a b
+```
+
+Then you can store stuff in the List this way:
+
+```haskell
+foo :: Fix ListF
+foo = In (Cons 1 (In (Cons 2 (In (Cons 3 (In Nil))))))
+```
+
+However, using alternate representations for common data types is tedious.
+Instead, you can use the `Base` type family to associate the plain data type
+with its "base" representation.
+
+```haskell
+type family Base t :: * -> *
+
+instance Base [a] = ListF a
+```
+
+`Base [a]` is another way of writing `ListF a`.
+I'm not sure I understand why you can't just use a type alias here.
+
+This only gets us halfway.
+Then the `Recursive` and `Corecursive` type classes are used to go between the
+plain data type and its base representation.
+To define an instance of these type classes, the data type must be a member of
+the `Base` type family.
+
+`Recursive` gives you two things:
+
+- `project`: a way to go from the plain type to the `Base` representation
+- `cata`: a way to fold the plain type by way of the `Base` representation
+
+```haskell
+class (Functor (Base t)) => Recursive t where
+  project :: t -> Base t t
+  cata :: (Base t a -> a) -> t -> a
+```
+
+`Corecursive` is dual to `Recursive`.
+`Corecursive` also gives you two things:
+
+- `embed`: a way to go from the base representation to the plain type
+- `ana`: an unfold from an initial seed value to the plain type, by way of the 
+  base representation.
+
+```haskell
+class Functor (Base t) => Corecursive t where
+  embed :: Base t t -> t
+  ana :: (a -> Base t a) -> a -> t
+```
+
+So the algebras are always dealing with the Base representation, e.g. with 
+`ListF a` instead of `[a]`.
+But the inputs and outputs are always the plain representation, e.g. `[a]`.
+
+`cata` can be defined in terms of `project` and `ana` can be defined in terms of
+`embed`:
+
+```haskell
+cata :: (Base t a -> a) -> t -> a
+cata f = c where c = f . fmap c . project
+
+ana :: (a -> Base t a) -> a -> t
+ana g = a where a = embed . fmap a . g 
+```
+
+`Recursive` and `Corecursive` instances for `ListF a`:
+
+```haskell
+instance Recursive [a] where
+  project (x:xs) = Cons x xs
+  project [] = Nil
+
+instance Corecursive [a] where
+  embed (Cons x xs) = Cons x : xs
+  embed Nil = []
+```
+
+Because of the MINIMAL pragma, you don't need to define `cata` and `ana`.
+
+Then you can sum the items in a list like this:
+
+```haskell
+sumList :: Num a => [a] -> a
+sumList = cata go where
+  go Nil = 0
+  go (Cons a acc) = a + acc
+```
+
+Because `Recursive` has an instance for `[a]`, you can use `cata` without 
+explicitly using `Fix`.
+
+**Questions***
+
+Question: why don't you have to define `project` and `embed` recursively? 
+Question: why does the recursion-schemes package use `para` and `apo` instead of
+`cata` and `ana`?
+Question: where did `Fix` go?
+
+### PureScript's approach
+
+PureScript does not have type families.
+Matryoshka has `Corecursive` and `Recursive` classes.
+
+```purescript
+class (Functor f) <= Recursive t f | t -> f where
+  project :: t -> t f
+```
+
+```purescript
+class (Functor f) <= Corecursive t f | t -> f where
+  embed :: f t -> t
+```
+
+### Explanation
+
+Recursion schemes are a way to separate the logic of traversing a data structure
+from the logic that transforms the data structure.
+
+To sum a list:
+
+We might be used to seeing `List` defined this way:
+
+```purescript
+data List a = Nil | Cons a (List a)
+```
+
+List is a recursive type.
+The recursion is hardcoded into the type.
+
+To sum a `List Int`, we might write a function like this:
+
+```purescript
+sumList :: List Int -> Int
+sumList Nil = 0
+sumList (Cons h t) = h + sumList t
+```
+
+Then we can sum a list of ints like this:
+
+```purescript
+sumList (Cons 1 (Cons 2 (Cons 3 Nil)))
+-- 6
+```
+
+Now, if we wanted to get the product of the list, we have to duplicate the 
+recursion logic.
+
+```purescript
+prodList :: List Int -> Int
+prodList Nil = 1
+prodList (Cons h t) = h * prodList t
+```
+
+A second way to do this is to use a fold:
+
+```purescript
+instance foldableList :: Foldable List where
+  -- foldr :: forall a b. (a -> b -> b) -> b -> t a -> t b
+  foldr _ y Nil = y
+  foldr f y (Cons h t) = foldr f (f h y) t
+
+  -- foldl :: forall a b. (b -> a -> b) -> b -> t a -> t b
+  foldl _ y Nil = y
+  foldl f y (Cons h t) = foldl f (f y h) t
+
+  -- foldMap :: forall a m. Monoid m => (a -> m) -> f a -> m
+  foldMap _ Nil = mempty
+  foldMap f (Cons h t) = f h <> foldMap f t
+```
+
+I'm not sure that using `List` is such a strong motivating example.
+A `Foldable` instance accomplishes the same thing.
+
+Question: what problem does Recursion schemes solve that Foldable doesn't?
+
+This is how to do the same thing with recursion schemes:
+
+First, remove the explicit recursion from the List type.
+Define a `ListF a t` type.
+
+```purescript
+data ListF a t = Nil | Cons a t 
+
+derive instance functorListF :: Functor (ListF a)
+```
+
+Now the question is, how do we make a list using this type?
+
+```purescript
+foo :: ListF Int ?
+foo = Cons 1 ?
+
+foo :: ListF Int (ListF Int ?)
+foo = Cons 1 (Cons 2 ?)
+```
+
+Now we can see two problems.
+`ListF` is not a recursive type.
+We can't construct an arbitrarily recursive `ListF` in the way that we can 
+construct an arbitrarily recursive `List Int`.
+Each layer of recursion has to be spelled out explicitly in the type.
+Second, if we try to make `ListF` recursive, we find that we can't terminate 
+`ListF`.
+We have to stick some other type at the end.
+
+```purescript
+foo :: ListF Int (ListF Int (ListF Int ?))
+foo = Cons 1 (Cons 2 Nil)
+```
+
+So `ListF` is more like a tuple.
+But we want it to have the same recursive properties as our original `List` 
+type.
+
+This is where the fixed point combinators come in.
+The Y-combinator is a combinator that makes a function recursive.
+There are also fixed-point combinators that can be used to make any type with 
+kind * -> * recursive.
+These are called the fixed points of functors.
+One of these is the least-fixed point combinator, or Mu after the Greek letter.
+
+```purescript
+newtype Mu f = In (f (Mu f))
+```
+
+So we can see that `Mu` applies the functor `f` to `Mu f`.
+
+`Mu` can be used like this:
+
+```purescript
+foo :: Mu (ListF Int)
+foo = In Nil
+
+bar :: Mu (ListF Int)
+bar = In (Cons 1 (In Nil))
+
+baz :: Mu (ListF Int)
+baz = In (Cons 1 (In (Cons 2 (In Nil))))
+```
+
+So `Mu ListF` has the same recursive property as our original `List a` type.
+Let's call `Mu ListF` `List`.
+
+```purescript
+type List a = Mu (ListF Int)
+```
+
+For the sake of convenience, let's write some functions that construct a list for
+us:
+
+```purescript
+nil :: forall a. List a
+nil = In Nil
+
+cons :: forall a. a -> List a -> List a
+cons h t = In (Cons h t)
+```
+
+Now, `Mu` isn't the only fixed point combinator.
+We'd rather not tie our type to any particular fixed point combinator.
+So instead of explicitly constructing the type `Mu` using `In`, we create a 
+typeclass called `Recursive` that gives us a way to construct anything like `Mu`.
+todo: say this better
+
+```purescript
+class Functor f <= Corecursive t f | t -> f where
+  embed :: f t -> t
+```
+
+And we define an instance for `Mu`.
+
+```purescript
+instance corecursiveMu :: Functor f => Corecursive (Mu f) f where
+  embed = In
+```
+
+Now we can refactor our smart constructors this way:
+
+```purescript
+nil :: forall a. List a
+nil = embed Nil
+
+cons :: forall a. a -> List a -> List a
+cons h t = embed (Cons h t)
+```
+
+`Recursive` works in the opposite way.
+Where `Corecursive` is an "unfold", `Recursive` is a "fold".
+
+```purescript
+class Functor f <= Recursive t f | t -> f where
+  project :: t -> f t  
+
+instance recursiveMu :: Functor f => Recursive (Mu f) f where
+  project (In x) = x
+```
+
+Now there are two things left to do.
+Define a recursion scheme and define an "algebra".
+Algebra is a term for the type of function that the recursion scheme will apply
+to the data structure, in this case `List a`.
+There are many different kinds of algebras.
+The algebra we'll define is just called algebra.
+todo: maybe leave this out until the end.
+
+```purescript
+type Algebra f a = f a -> a
+
+sumList :: Algebra ListF Int
+sumList Nil = 0
+sumList (Cons x y) = x + y
+```
+
+So now we've written our transformation without including any of the 
+transformation logic.
+
+Finally, the recursion scheme `cata`.
+
+```purescript
+cata :: forall f a. Algebra f a -> f a -> a
+cata f = go
+  go x = f <<< map go <<< project x
+```
+
+First unwrap our `Mu (ListF Int)` to `ListF Int`.
+Then lift `go` over `ListF`.
+This continues until you hit the base case `Nil`.
+Then it starts working back up, applying `f` to each cons cell until you've got
+the result.
+
+And then:
+
+```purescript
+cata sumList foo
+-- 6
+```
+
+Questions:
+
+- What is the most effective way to organize all of this information?
+- What do you need to do to introduce these concepts to beginners?
+- What is the most minimal definition of recursion schemes?
+- What is a good motivating example, one where foldl doesn't work?
+
+#### Hylomorphism
+
+catamorphism: fold a data structure
+anamorphism: unfold a data structure
+paramorphism: fold with additional information
+apomorphism: unfold with additional information
+histomorphism: fold with the complete history of the fold 
+futumorphism: unfold with control flow
+
+What happens when you compose a fold and an unfold?
+
+Anamorphism is an unfold: a -> t a
+Catamorphism is a fold: t a -> a.
+Hylorphism is transforms `a` into `t b`,  then `t b` into `b`.
+A hylomorphism takes both an Algebra and a Coalgebra.
+The Coalgebra produces values for the Algebra to consume.
+This is a "refold".
+
+```purescript
+hylo :: Functor f => Algebra f b -> Coalgebra f a -> a -> b
+hylo alg coalg = ana coalg >>> cata alg 
+```
+
+"Hylo" means
