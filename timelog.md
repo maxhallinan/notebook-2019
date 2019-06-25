@@ -1,5 +1,18 @@
 # Time
 
+## 2019-06-24 - 2019-06-30
+
+| Date | Tomatoes | Time |
+|------|----------|------|
+| 2019-06-25 | 10 | 4:10 | 
+
+## 2019-06-25
+
+Lisp interpreter in PureScript:
+
+- AST data types
+- Parser for symbols and special forms 
+
 ## 2019-06-17 - 2019-06-23
 
 | Date | Tomatoes | Time |
