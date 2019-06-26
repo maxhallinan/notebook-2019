@@ -5,6 +5,18 @@
 | Date | Tomatoes | Time |
 |------|----------|------|
 | 2019-06-25 | 10 | 4:10 | 
+| 2019-06-26 |  8 | 3:20 | 
+
+## 2019-06-26
+
+Lisp interpreter in PureScript:
+
+- Finished first version of parser
+- Added the Recursive and Corecursive classes
+- Added cata and histo to the Recursive module
+- Debugged a cyclic declaration error in the list and expr parsers. 
+- Researched implementations of Control.Lazy
+- Researched implementations of ParserT and anyChar
 
 ## 2019-06-25
 
