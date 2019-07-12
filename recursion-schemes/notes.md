@@ -686,7 +686,7 @@ So this builds up a structure of `Fix AddF` equivalent to the int 3.
 
 #### Histomorphism
 
-A histomorphims first descends to the leaves of the tree.
+A histomorphim first descends to the leaves of the tree.
 Then it works back up toward the root of the tree.
 As it does this, it builds up a second tree.
 This second tree mirrors the structure of the first tree.
@@ -1335,7 +1335,7 @@ What happens when you compose a fold and an unfold?
 
 Anamorphism is an unfold: a -> t a
 Catamorphism is a fold: t a -> a.
-Hylorphism is transforms `a` into `t b`,  then `t b` into `b`.
+Hylorphism transforms `a` into `t b`,  then `t b` into `b`.
 A hylomorphism takes both an Algebra and a Coalgebra.
 The Coalgebra produces values for the Algebra to consume.
 This is a "refold".
@@ -1345,4 +1345,64 @@ hylo :: Functor f => Algebra f b -> Coalgebra f a -> a -> b
 hylo alg coalg = ana coalg >>> cata alg 
 ```
 
-"Hylo" means
+"Hylo" means matter in Greek, meaning the substance out of which an object is 
+formed.
+
+> ...we can read 'hylomorphism' as a function that forms a result object out of
+> some intermediate, constituent matter.
+
+Uses for a hylomorphism:
+
+- data aggregations like finding the mean or median of a dataset.
+- divide and conquer techniques like quicksort, mergesort, fourier transform
+- determine difference between data structures
+
+##### Reverse polish notation calculator with hylomorphism
+
+In postfix notation (or Reverse Polish notation), all of the operands come 
+first, followed by all of the operators.
+
+```purescript
+data Token
+  = Lit Int
+  | Op (Int -> Int -> Int)
+```
+
+```purescript
+parseToken :: String -> Token
+parseToken "+" = Op (+)
+parseToken "-" = Op (-)
+parseToken "*" = Op (*)
+parseToken "/" = Op div
+parseToken num = Lit $ read num 
+```
+
+```purescript
+data Lst a b 
+  = Cons a b
+  | Nil
+  deriving (Show, Eq, Functor)
+
+type Coalgebra f a = a -> f a
+
+parseRPN :: Coalgebra (List Token) String
+parseRPN "" = Nil
+parseRPN str = Cons token newSeed
+  where (x, rest) = span (not . isSpace) str
+        token     = parseToken x
+        newSeed   = dropWhile isSpace rest
+
+type Algebra f a = f a -> a
+
+-- f :: List Token
+
+type Stack = [Int]
+
+evalRPN :: Algebra (List Token) (Stack -> Stack)
+evalRPN Nil stack = stack
+evalRPN (Cons (Lit i) cont) stack = cont (i : stack)
+evalRPN (Cons (Op fn) cont) (a:b:rest) = cont (fn b a : rest)
+evalRPN _ stack = error ("too few arguments on stack" <> show stack)
+```
+
+
