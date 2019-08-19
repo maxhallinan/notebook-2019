@@ -1,0 +1,40 @@
+html, body {
+  background: ##fdfdfd;
+  color: #222;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.document {
+  margin: 0 auto;
+  width: 66%;
+}
+
+.editor {
+  position: relative;
+}
+
+.editor.editor-active {
+  border-bottom: 1px solid #999;
+}
+
+.editor-cursor {
+}
+
+.editor-display {
+}
+
+.editor-input {
+  left: 0;
+  height: 100%;
+  opacity: 0;
+  // pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: -1;
+}
+
+.editor-active .editor-input {
+  z-index: 2;
+}

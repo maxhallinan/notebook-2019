@@ -1,0 +1,24 @@
+html, body {
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+.doc {
+  margin: 0 auto;
+  max-width: 45rem;
+  padding: 1rem;
+}
+
+.cell {
+  margin: 0 0 1rem;
+}
+
+textarea {
+  border: 1px solid #444;
+  color: #222;
+  display: block;
+  font-size: 1rem;
+  font-family: monospace;
+  margin: 0 0 1.5rem;
+  width: 100%;
+}
