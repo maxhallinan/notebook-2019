@@ -12,7 +12,6 @@ function ListNode(val) {
   this.val = val;
   this.next = null;
 }
-
 const four = new ListNode(4);
 const three = new ListNode(3);
 const two = new ListNode(2);

@@ -6,7 +6,7 @@ https://www.saving.org/time/minutes/250
 
 | Date       | Tomatoes  | Time |
 |------------|-----------|------|
-| 2019-08-19 | 15 @ 0:25 | 6:15 |
+| 2019-08-19 | 17 @ 0:25 | 7:05 |
 
 ### 2019-08-19
 
@@ -17,6 +17,7 @@ https://www.saving.org/time/minutes/250
   - When user presses enter on an empty code cell, replace the code cell with a 
     text cell.
 - [sicp][2] Started reading section 2.2.4
+- [blog][2] Worked on second draft of "What Is a Logo-Like Language?"
 
 ## 2019-08-12 - 2019-08-18
 
