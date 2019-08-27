@@ -7,6 +7,15 @@ https://www.saving.org/time/minutes/250
 | Date       | Tomatoes  | Time |
 |------------|-----------|------|
 | 2019-08-26 | 14 @ 0:25 |      |
+| 2019-08-27 | 12 @ 0:25 |      |
+
+### 2019-08-27
+
+- [LeetCode][4] LeetCode exercises #104. Attempted the BST validation and level
+  order traversal.
+- [SICP][5] Did a deep dive on Church numerals, introduced by exercise 2.6. 
+  Worked out how addition and multiplication of Church numerals works.
+- [Logo][3] Added tests for cell, doc, and state updates.
 
 ### 2019-08-26
 
