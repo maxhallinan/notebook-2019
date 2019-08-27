@@ -2,19 +2,69 @@
 
 https://www.saving.org/time/minutes/250
 
+## 2019-08-26 - 2019-09-01
+
+| Date       | Tomatoes  | Time |
+|------------|-----------|------|
+| 2019-08-26 | 14 @ 0:25 |      |
+
+### 2019-08-26
+
+- [LeetCode][4] LeetCode exercises 141, 21, and 234.
+- [SICP][5] Read section 2.1 and did exercises 2.1, 2.2, 2.3, 2.4, and part of 
+  2.5
+- [Logo][5] Start moving document and cell logic into helper function modules 
+  and writing tests.
+
 ## 2019-08-19 - 2019-08-25
 
 | Date       | Tomatoes  | Time |
 |------------|-----------|------|
-| 2019-08-19 | 17 @ 0:25 | 7:05 |
+| 2019-08-19 | 20 @ 0:25 | 8:20 |
+| 2019-08-20 | 11 @ 0:25 |      |
+| 2019-08-21 | 10 @ 0:25 |      |
+| 2019-08-22 | 10 @ 0:25 |      |
+| 2019-08-23 | 10 @ 0:25 |      |
+| 2019-08-24 | 10 @ 0:25 |      |
+| 2019-08-25 | 10 @ 0:25 |      |
+
+Estimates this week, since I didn't track all of my time.
+
+### Done this week
+
+- Wrote and publishded "What Is a Logo-Like Language?".
+- Styled text cells.
+- Live Markdown rendering to alphanumeric names.
+- Renamed special forms to alphanumeric names.
+- Presented "Functions that behave like data" using my Logo notebook as the 
+  presentation environment.
+- Fixed bug with weird focus issues in cells.
+- Fixed bug with function environments.
+- Enter twice at the end of the text cell creates a code cell.
+- Enter in an empty code cell creates a text cell.
+- Added integers to the language.
+- Added floats to the language.
+- Run code when Shift+Enter pressed in code cell.
+- Integrated CodeMirror.
+- Integrated ProseMirror.
+- Read and took notes on the ProseMirror guide.
+- LeetCode #237, #19, #206, #1, and #66.
+- Read part of SICP section 2.2.4.
+
+### 2019-08-20
+
+- [leetcode][5] LeetCode #237, #19, #206, and part of the merge linked lists
+  problem.
+- [logo-notebook]
+- [logo-lang][2] Added floats and integers to language
 
 ### 2019-08-19
 
 - [leetcode][3] LeetCode #1 and #66
-- [logo-notebook][10] 
+- [logo-notebook][10]
   - Integrate CodeMirror.
   - Basic styles for code cell.
-  - When user presses enter on an empty code cell, replace the code cell with a 
+  - When user presses enter on an empty code cell, replace the code cell with a
     text cell.
 - [sicp][2] Started reading section 2.2.4
 - [blog][2] Worked on second draft of "What Is a Logo-Like Language?"
@@ -65,7 +115,7 @@ Total: 29:35
 ### 2019-08-13
 
 - Researched purescript-halogen as an option for the logo-notebook UI.
-- Researched JavaScript and Elm libraries for WebGL and building a text editor 
+- Researched JavaScript and Elm libraries for WebGL and building a text editor
   (e.g., CodeMirror).
 - Prototyped a simple sequence of code cells with React:
   - Render cells
@@ -75,7 +125,7 @@ Total: 29:35
   - Run in shared environment
 - Researched PureScript's FFI
 - Extended interpreter API to run a sequence of programs in a shared environment
-- Extended interpreter API to read and serialize to an array of strings for 
+- Extended interpreter API to read and serialize to an array of strings for
   interop with JavaScript.
 
 ### 2019-08-12
