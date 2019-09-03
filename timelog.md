@@ -2,12 +2,36 @@
 
 https://www.saving.org/time/minutes/250
 
+## 2019-09-02 - 2019-09-07
+
+| Date       | Tomatoes  | Time |
+|------------|-----------|------|
+| 2019-09-02 | 14 @ 0:25 |      |
+| 2019-09-03 | 13 @ 0:25 |      |
+
+### 2019-09-03
+
+- LeetCode #101: Symmetric Tree
+- Part of LeetCode #108: Array to BST
+- Lambda calc interpreter:
+  - Implemented parser.
+  - Implemented Core.Node and Core.Expr types with relevant instances.
+  - Implemented Core.replaceNode, Core.findNode, and Core.applyLambda 
+- Went for a walk with James Porter
+
 ## 2019-08-26 - 2019-09-01
 
 | Date       | Tomatoes  | Time |
 |------------|-----------|------|
 | 2019-08-26 | 14 @ 0:25 |      |
-| 2019-08-27 | 12 @ 0:25 |      |
+| 2019-08-27 | 13 @ 0:25 |      |
+| 2019-08-28 | 13 @ 0:25 |      |
+
+### 2019-08-28
+
+- [SICP][6] Read page 132 - 152. Did exercises 2.17 - 2.29.
+- [Logo][6] Write tests and reducer for cell appended and cell evaluated.
+- [1] Play around with another attempt at the Lisp stepper.
 
 ### 2019-08-27
 
@@ -15,7 +39,9 @@ https://www.saving.org/time/minutes/250
   order traversal.
 - [SICP][5] Did a deep dive on Church numerals, introduced by exercise 2.6. 
   Worked out how addition and multiplication of Church numerals works.
-- [Logo][3] Added tests for cell, doc, and state updates.
+- [Logo][4] Finished tests for cellFns and docFns. Started refactoring Document
+  state to use a reducer. Added actions, actions creators, reducers, and tests 
+  for `CELL_CONTENT_CHANGED`, `CELL_CONTENT_DELETED`, and `CELL_FOCUSED`.
 
 ### 2019-08-26
 
