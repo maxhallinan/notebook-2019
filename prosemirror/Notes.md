@@ -312,3 +312,363 @@ Each node specification has a nodes attribute that specifies the set of valid
 marks for that node.
 
 **Attributes**
+
+**Serialization and Parsing**
+
+Two kinds of serialization/parsing:
+
+- to/from JSON
+- to/from DOM
+
+_DOM Serialization_
+
+Each node must have a DOM representation.
+The `toDom` method of a node specifies how it displayed in the DOM.
+
+`toDom` can return:
+  - a DOM node
+  - a string, which is interpreted as a text element
+  - an array where:
+    - the first element is a string, the name of the DOM element
+    - the second element is a plain object, the attributes of the element
+    - elements after that are children of the element
+
+```javascript
+const schema = new Schema({
+  nodes: {
+    doc: {content: 'paragraph+'},
+    paragraph: {
+      content: 'text*',
+      toDom(node) { return ["p", {class: "p"}, 0] }
+    },
+    text: {},
+  }
+});
+```
+
+In the above example, the `0` is a hole where the content of the node is 
+rendered.
+Only non-leaf nodes need a hole.
+Leaf nodes don't have content.
+
+_DOM Parsing_
+
+The `parseDOM` option is used to define a DOM parser for each node.
+`parseDOM` takes an array of parse rules.
+
+```javascript
+parseDOM: [
+  {tag: 'em'},
+  {tag: 'i'},
+  {style: 'font-style=italic'},
+]
+```
+
+A DOM element matching any of these rules will be parsed into the corresponding
+Document node.
+
+### Document transformations
+
+The transformation system leaves a trail of updates.
+
+This is useful for:
+
+- document history features like undo/redo
+- collaborative editing system
+
+#### Steps
+
+An update to a document is decomposed to a set of steps.
+
+Examples:
+
+- `ReplaceStep`: replaces a piece of a document
+- `AddMarkStep`: adds a mark to a given range
+
+A step is applied to a document to produce a new document.
+
+```javascript
+console.log(doc.toString()) // -> p("hello")
+let step = new ReplaceStep(3,5,Slice.empty);
+let result = step.apply(doc);
+console.log(result.doc.toString()) // -> p("heo")
+```
+
+Steps are extremely low-level and you can produce an invalid document by using 
+them directly.
+Instead use [helper functions](https://prosemirror.net/docs/ref/#transform.Transform.replace) 
+to generate steps.
+
+#### Transforms
+
+To sequence steps, create a `Transform` object and apply the steps to the 
+transform.
+
+```javascript
+let tr = new Transform(myDoc);
+tr.delete(5,7);
+tr.split(5);
+```
+
+#### Mapping
+
+A step can give you a map.
+The map will convert positions in the document before applying the step to 
+positions in the document after applying the step.
+
+```javascript
+let step = new ReplaceStep(4,6,Slice.empty);
+let map = ste.getMap();
+console.log(map.map(8)) // -> 6
+console.log(map.map(2)) // -> 2
+```
+
+A Transform object contains a `tr.mapping.map` which is the map after all steps
+have been applied.
+
+#### Rebasing
+
+Rebasing is the process of taking two steps that start with the same document 
+and sequencing them, so that one then applies to the document produced by the
+other.
+
+Rebasing is used for more complicated transformations:
+
+- change tracking
+- collaborative editing
+
+Steps are rebased.
+
+### The editor state
+
+A ProseMirror state has three main components:
+
+- `doc`: the document
+- `selection`: the current selection
+- `storedMarks` 
+
+#### Selection
+
+A selection is an instance of the Selection class or its subclasses.
+
+Props:
+
+- `from` and `to`: positions in the current document
+- `anchor`: the unmoveable side of the selection
+- `head`: the moveable side of the selection
+
+A **text selection** are used for cursors (then `from` and `to` are the same), 
+and for selected text. 
+Both endpoints of a text selection are required to positions within inline 
+content.
+
+A **node selection** is a selection of the entire node. This can be useful for
+structure editor-like stuff.
+
+#### Transactions
+
+State is updated by applying a transaction to an existing state, producing a new
+state.
+
+
+```javascript
+const transaction = state.tr;
+transaction.inserText("hello");
+let newState = state.apply(transaction);
+```
+
+A Transaction is a subclass of a Transform.
+A Transaction is more specific to the editor state than a Transform.
+The state object has a `tr` getter method, which returns a Transaction for that 
+state.
+You can then operate on that Transaction.
+
+#### Plugins
+
+To create a plugin, instantiate the `Plugin` class and include the instance in 
+the `plugins` array when instantiating `EditorState`.
+
+```javascript
+let myPlugin = new Plugin({
+  props: {
+    handleKeyDown(view, event) {
+      console.log('A key was pressed!');
+      return false; // signals event was not handled
+    }
+  }
+});
+
+let state = EditorState.create({schema, plugins:[myPlugin]});
+```
+
+Plugins can store their state in the editor state using a "state slot":
+
+```javascript
+let transactionCounter = new Plugin({
+  state: {
+    init() { return 0 },
+    // This function should not mutate `value`
+    // Should return a copy of `value`
+    apply(tr, value) { return value + 1 }
+  }
+});
+
+function getTransactionCount(state) {
+  return transactionCounter.getState(state);
+}
+```
+
+### The view component
+
+> When the browser updates the DOM, the editor notices, re-parses the changed 
+> part of the document, and translates the difference into a transaction.
+
+The editor view has two general responsibilities:
+
+- display the current state to the user
+- handle user interactions with the editor
+
+#### Data flow
+
+DOM event -> Transaction -> new EditorState -> EditorView
+
+`dispatchTransaction` is used to intercept a transaction as it is dispatched.
+This can be used to write a ProseMirror instance into a Redux app.
+
+```javascript
+let appState = {
+  editor: EditorState.create({schema}),
+  score: 0,
+};
+
+let view = new EditorView(document.body, {
+  state: appState.editor,
+  dispatchTransaction(transaction) {
+    update({type: "EDITOR_TRANSACTION", transaction});
+  }
+});
+
+function update(event) {
+  if (event.type === "EDITOR_TRANSACTION") {
+    appState.editor = appState.editor.apply(event.transaction);
+  } else if (event.type === "SCORE_POINT") {
+    appState.score++;
+  }
+  draw();
+}
+
+function draw() {
+  document.querySelector('#score').textContent = appState.score;
+  view.updateState(appState.editor);
+}
+```
+
+#### Props
+
+Like React props, CodeMirror props are parameters to a UI component that define
+its behavior.
+
+```javascript
+const view = new EditorView({
+  state: myState,
+  editable() { return false; }
+  handleDoubleClick() { console.log("Double click!") }
+});
+```
+
+A plugin can declare props that are provided directly to a view:
+
+```javascript
+function maxSizePlugin(max) {
+  return new Plugin({
+    props: {
+      editable(state) { return state.doc.content.size < max; }
+    }
+  });
+}
+```
+
+If a prop is declared multiple times, the direct declaration on the view 
+instance has precedence, then each of the plugins in turn.
+
+#### Decorations
+
+Decorations provide some control over the way the view draws the document.
+Created by returning values from the decorations prop:
+
+- Node decorations: add styling or other DOM attributes to a single node's DOM
+  representation.
+- Widget decorations: insert a DOM node, which isn't part of the actual 
+  document, at a given position.
+- Inline decorations: add styling or attributes, much like node decorations, but
+  to all inline nodes in a given range.
+
+#### Node views
+
+Node views specify how a node will be rendered in the DOM.
+
+Capabilities:
+
+- render the DOM
+- define how the node is updated
+- write custom code to react to events
+
+```javascript
+let view = new EditorView({
+  state,
+  nodeView: {
+    image(node) { return new ImageView(node) }
+  }
+});
+
+class ImageView {
+  constructor(node) {
+    this.dom = document.createElement('img');
+    this.dom.src = node.attrs.src;
+    this.dom.addEventListener('click', e => {
+      e.preventDefault();
+      console.log('Clicked')
+    })
+  }
+  // tells ProseMirror to ignore events emitted by this node 
+  stopEvent() { return true; }
+}
+```
+
+### Commands
+
+A command is a function that implements an editing action.
+The user can perform the editing action by pressing a key combination or 
+interaction with a menu.
+
+Commands take an editor state and a dispatch function, and return a boolean:
+
+```javascript
+function deleteSelection(state, dispatch) {
+  if (state.selection.empty) { 
+    return false; 
+  }
+  if (dispatch) {
+    dispatch(state.tr.deleteSelection());
+  }
+  return true;
+}
+```
+
+Commands should return `false` when they aren't applicable.
+Otherwise they should both dispatch the transaction and return true.
+
+`dispatch` is optional, and should always be tested for before it is called.
+ProseMirror will sometimes call a command function without providing `dispatch`
+in order to test whether the command applies.
+That is the utility of returning `true` - it can test whether the command 
+applies without having the command do the update.
+
+**Commands don't have to dispatch a transaction**.
+A command is called to trigger a side-effect.
+This is often dispatching a transaction.
+But it can be something like opening a modal too.
+
+Each command should encapuslate one behavior.
+Commands can be composed using the `chainCommands` function.
+
