@@ -2,6 +2,47 @@
 
 https://www.saving.org/time/minutes/250
 
+## 2019-09-09 - 2019-09-15
+
+| Date       | Tomatoes  | Time |
+|------------|-----------|------|
+| 2019-09-10 | 10 @ 0:25 |      |
+
+## 2019-09-10
+
+Today:
+
+- Met with Sonali about job searching.
+- Learned how to use purescript-trout and purescript-hypertrout.
+- Added the first route to my ActivityPub server: a route for Accounts.
+  - Returned mockdata.
+- Finished research and outline for "What is datatype-generic programming?" blog
+  post.
+
+Tomorrow
+
+- Remove GET /v1/accounts, since I don't think I'll ever need to get a list of
+  accounts.
+- Add GET /v2/accounts/:id so I
+  - Return mock account data
+- Add POST /v1/accounts
+  - Return data that has been posted
+- Persist an account
+  - Use SQLite
+
+Questions
+
+- [Trout] How do I know, by looking at the type, that a JSON resource needs an
+  instance of EncodeJson?
+- [PureScript] What is the type of a record field label? In constructing a record
+  of type `{foo :: Int}`, why are is `{foo: 1}` and `{"foo": 1}`
+  interchangeable?
+- [Trout] Why couldn't I use the RouteStateTransition type alias in annotating the
+  router? I had to use Middleware, but RouteStateTransition is an alias for
+  Middleware.
+- [Trout] How does type-level route specification work? How does the library
+  match agains the type-level route structures on the value level?
+
 ## 2019-09-02 - 2019-09-07
 
 | Date       | Tomatoes  | Time |
@@ -16,7 +57,7 @@ https://www.saving.org/time/minutes/250
 - Lambda calc interpreter:
   - Implemented parser.
   - Implemented Core.Node and Core.Expr types with relevant instances.
-  - Implemented Core.replaceNode, Core.findNode, and Core.applyLambda 
+  - Implemented Core.replaceNode, Core.findNode, and Core.applyLambda
 - Went for a walk with James Porter
 
 ## 2019-08-26 - 2019-09-01
@@ -37,18 +78,18 @@ https://www.saving.org/time/minutes/250
 
 - [LeetCode][4] LeetCode exercises #104. Attempted the BST validation and level
   order traversal.
-- [SICP][5] Did a deep dive on Church numerals, introduced by exercise 2.6. 
+- [SICP][5] Did a deep dive on Church numerals, introduced by exercise 2.6.
   Worked out how addition and multiplication of Church numerals works.
 - [Logo][4] Finished tests for cellFns and docFns. Started refactoring Document
-  state to use a reducer. Added actions, actions creators, reducers, and tests 
+  state to use a reducer. Added actions, actions creators, reducers, and tests
   for `CELL_CONTENT_CHANGED`, `CELL_CONTENT_DELETED`, and `CELL_FOCUSED`.
 
 ### 2019-08-26
 
 - [LeetCode][4] LeetCode exercises 141, 21, and 234.
-- [SICP][5] Read section 2.1 and did exercises 2.1, 2.2, 2.3, 2.4, and part of 
+- [SICP][5] Read section 2.1 and did exercises 2.1, 2.2, 2.3, 2.4, and part of
   2.5
-- [Logo][5] Start moving document and cell logic into helper function modules 
+- [Logo][5] Start moving document and cell logic into helper function modules
   and writing tests.
 
 ## 2019-08-19 - 2019-08-25
@@ -71,7 +112,7 @@ Estimates this week, since I didn't track all of my time.
 - Styled text cells.
 - Live Markdown rendering to alphanumeric names.
 - Renamed special forms to alphanumeric names.
-- Presented "Functions that behave like data" using my Logo notebook as the 
+- Presented "Functions that behave like data" using my Logo notebook as the
   presentation environment.
 - Fixed bug with weird focus issues in cells.
 - Fixed bug with function environments.
