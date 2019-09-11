@@ -7,6 +7,71 @@ https://www.saving.org/time/minutes/250
 | Date       | Tomatoes  | Time |
 |------------|-----------|------|
 | 2019-09-10 | 10 @ 0:25 |      |
+| 2019-09-11 | 13 @ 0:25 |      |
+
+## 2019-09-10
+
+Today:
+
+[ActivityPub Server][9 tomatoes]
+
+- Tried to add a POST /api/v1/accounts endpoint to my ActivityPub server.
+  - Ran into some difficulties getting access to the Request body with 
+    purescript-hypertrout.
+  - In general, the complexity of the hyper, trout, and hypertrout types were
+    slowing me down. 
+    It was the third day of work on the project and I was struggling to return
+    mock data.
+  - Most of the time had been spent learning to use these libraries and working
+    through compiler errors.
+- Replaced hyper/trout/hypertrout with Justin Woo's purescript-makkori, a thin 
+  Purescript wrapper for Express.
+  - In a couple of hours, maybe less, I implemented as much as I had in 3 days
+    with hyper, trout, and hypertrout.
+  - Makkori advantages:
+    - Concepts are much simpler - straight translation of Express's API.
+    - Better than using Express because I still get the benefit of the type 
+      system.
+    - Easy to add my own bindings if I need them.
+  - Makkori disadvantages:
+    - Not as many type-level guarantees as hyper and trout. 
+      For example, trout represents the API contract on the type level.
+      If your route handlers don't conform to the contract then the app doesn't
+      compile.
+    - Doesn't guarantee order of status, header, and request body handling the
+      way that Hyper's middleware does.
+
+[Blog][4 tomatoes]
+
+- Mostly finished a good first draft of "What is datatype-generic programming?". 
+  Wrote everything I had outlined. 
+  At the end, I realized that it would be good to show an implementation of a 
+  generic `show` function.
+
+Thoughts/Questions
+
+- Working with hyper/trout/hypertrout slowed me down. I thought this entire 
+  project, a minimal ActivityPub server, would take a week.
+  Was that wrong?
+- That was probably too optimistic given a few things:
+  - I've never written a web server in PureScript.
+  - I didn't know anything about ActivityPub.
+  - I didn't know anything about hyper, trout, or hypertrout.
+  - I've never persisted data to a database.
+- Should I have started with something easier?
+- Should I stop using PureScript?
+- Am I focusing on the wrong things by spending time writing an essay on 
+  datatype-generic programming? Is this topic too specialized? Would I be 
+  better off focusing on a less niche topic? 
+  - I'm trying to understand the abstractions I'm using.
+  - The Generic typeclass was one I had bumped into repeatedly in PureScript. 
+    I had found the explanations confusing. Now I understand it.
+  - I think it's a good use of time if I am planning to use PureScript or 
+    Haskell.
+- Is learning and using PureScript a waste of time?
+- I want to learn how to architect a web server.
+    - What are the parts?
+    - How do the parts fit together?
 
 ## 2019-09-10
 
