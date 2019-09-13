@@ -7,9 +7,54 @@ https://www.saving.org/time/minutes/250
 | Date       | Tomatoes  | Time |
 |------------|-----------|------|
 | 2019-09-10 | 10 @ 0:25 |      |
-| 2019-09-11 | 13 @ 0:25 |      |
+| 2019-09-11 | 11 @ 0:25 |      |
+| 2019-09-12 | 11 @ 0:25 |      |
 
-## 2019-09-10
+## 2019-09-12
+
+Today:
+
+[Blog][2 tomatoes]
+
+- Published a first draft of "What is datatype-generic programming?" under 
+  /drafts.
+- Put together footnotes.
+- Solicited feedback. Feedback I got was that examples of a generic 
+  representation would be helpful.
+
+[ActivityPub Server][9 tomatoes]
+
+- Did the Codecademy SQL exercises to refresh my understanding of SQL.
+- Returned Account data from the database.
+
+Tomorrow:
+
+- Tomorrow I really want to get a v1 implemented for a webfinger server.
+- That means being able to create an account and being able to request the 
+  webfinger information.
+- I feel like what I've written so far is terrible.
+  There's no architecture or organization.
+  Most of the code has been brute-force get stuff working code.
+  I really feel like a shitty developer.
+- It doesn't matter. I just want to get this to a place where I have a working
+  web finger server.
+
+Things I Accomplished Today
+
+- Finishing a first draft of my blog post and asking for feedback.
+- Re-learning SQL, including joins. Feels like I understand joins better today 
+  than I ever have.
+- For the first time ever, I'm serving data from a database. I've never done 
+  this before. That _is_ an accomplishment.
+
+Questions:
+
+- How does type-level routing work? (I keep wondering this)
+- How are Haskell web servers organized? What is the architecture? How can I 
+  improve the code I've written?
+- What would an SQL dsl look like?
+
+## 2019-09-11
 
 Today:
 
